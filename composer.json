@@ -1,0 +1,15 @@
+{
+    "name": "numa/aodao",
+    "description": "AoDao Application Interface",
+    "type": "composer-plugin",
+    "require": {
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "EdwinLee",
+            "email": "94616824@qq.com"
+        }
+    ],
+    "minimum-stability": "dev"
+}
