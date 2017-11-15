@@ -21,13 +21,23 @@ class Sms
     }
 
     /**
+     * 验证类型短信
+     *
+     * @param $mobile
+     */
+    public function verycode($mobile)
+    {
+
+    }
+
+    /**
      * 短信发送接口
      *
      * @param array $datas
      * @param int $debug
      * @return array|mixed
      */
-    public function send($datas = [], $debug = 0)
+    private function _send($datas = [], $debug = 0)
     {
         $result = ['error' => 0, "message" => "成功", "data" => []];
         if (empty($datas)) {

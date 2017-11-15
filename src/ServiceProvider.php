@@ -14,6 +14,9 @@ class ServiceProvider extends LaravelServiceProvider
     public function boot()
     {
         $this->setupConfig();
+        $this->publishes([
+            __DIR__."/config.php"=>config_path('aodao.php')
+        ]);
     }
 
     /**
