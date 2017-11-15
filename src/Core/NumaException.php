@@ -14,4 +14,16 @@ use Exception as BaseException;
 class NumaException extends BaseException
 {
 
+    public function toArray()
+    {
+        return [
+            "error" => 1,
+            "message" => $this->getMessage()
+        ];
+    }
+
+    public function toJson()
+    {
+        return json_encode($this->toArray());
+    }
 }

@@ -9,10 +9,16 @@
 namespace Numa\Aodao;
 
 
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
+
 class Sms
 {
     protected $app_id;
     protected $secret;
+
+    //验证码缓存前缀
+    const CACHE_KEY_PREFIX = "aodao_code_cache";
 
     public function __construct($app_id, $secret)
     {
@@ -24,14 +30,169 @@ class Sms
      * 验证类型短信
      *
      * @param $mobile
+     * @param content 内容（必须包含$code）
+     * @param task 任务名称
+     * @return array|mixed
+     * @throws NumaException
      */
-    public function verycode($mobile)
+    public function code($mobile, $content, $task = '')
     {
-
+        if ($content == '') {
+            throw new NumaException('内容不能为空');
+        }
+        //判断content中是否含有$code信息
+        if (!strpos($content, '${code}')) {
+            throw new NumaException('内容中必须包含${code}');
+        }
+        //随机生成验证码（验证码位数）
+        $code = $this->_createVeryCode();
+        //保存验证码
+        $this->_cacheVeryCode($mobile, $code);
+        $datas = [];
+        $datas['mobile'] = $mobile;
+        $datas['typeid'] = Type::SMS_VERYCODE;
+        $datas['content'] = str_replace('${code}', $code, $content);
+        $datas['name'] = $task;
+        $result = $this->_send($datas);
+        return $result;
+    }
+    /**
+     *
+     */
+    /**
+     * 语音短信
+     *
+     * @param $mobile
+     * @param string $inform_con 签名
+     * @throws NumaException
+     */
+    public function vcode($mobile, $inform_con = '')
+    {
+        if ($inform_con == '') {
+            throw new NumaException('签名不能为空');
+        }
+        //随机生成验证码（验证码位数）
+        $code = $this->_createVeryCode();
+        //保存验证码
+        $this->_cacheVeryCode($mobile, $code);
+        $datas = [];
+        $datas['mobile'] = $mobile;
+        $datas['typeid'] = Type::SMS_VOICENOTICE;
+        $datas['content'] = $code;
+        $result = $this->_send($datas);
+        return $result;
     }
 
     /**
-     * 短信发送接口
+     * 验证码是否正确
+     *
+     * @param $mobile
+     * @param $code
+     * @return bool
+     */
+    public function checkCode($mobile, $code)
+    {
+        $cache_type = config('aodao.code_cache', 'file');
+        $key = self::CACHE_KEY_PREFIX . "_" . $mobile;
+        $cache_code = Cache::store($cache_type)->get($key);
+        if (is_null($cache_code)) {
+            return false;
+        } else {
+            if (Hash::check($code, $cache_code)) {
+                //清除该值
+                Cache::store($cache_type)->forget($key);
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 生成验证码及语音验证码
+     *
+     * @return string
+     */
+    private function _createVeryCode()
+    {
+        //随机生成验证码（验证码位数）
+        $code_length = config('aodao.code_len', 4);
+        $code = Common::random_srt($code_length, true);
+        return $code;
+    }
+
+    /**
+     * 保存验证码及语音验证码
+     *
+     * @param $mobile 手机号码
+     * @param $code 验证码
+     */
+    private function _cacheVeryCode($mobile, $code)
+    {
+        $code_expire = config('aodao.code_expire', 5);
+        $cache_type = config('aodao.code_cache', 'file');
+        $key = self::CACHE_KEY_PREFIX . "_" . $mobile;
+        Cache::store($cache_type)->put($key, Hash::make($code), $code_expire);
+    }
+
+    /**
+     * 单条会员通知短信
+     *
+     * @param $mobile 手机号码
+     * @param $content 内容
+     * @param $task 任务名称
+     * @return array|mixed
+     * @throws NumaException
+     */
+    public function notice($mobile, $content, $task = '')
+    {
+        if ($content == "") {
+            throw new NumaException('发送内容不能为空');
+        }
+        $datas = [];
+        $datas['mobile'] = $mobile;
+        $datas['typeid'] = TYPE::SMS_NOTICE;
+        $datas['content'] = $content;
+        $datas['name'] = $task;
+        $result = $this->_send($datas);
+        return $result;
+    }
+
+    /**
+     * 会员相同内容群发
+     *
+     * @param $mobiles
+     * @param $content
+     * @param string $task
+     * @return array|mixed
+     * @throws NumaException
+     */
+    public function noticeBatch($mobiles, $content, $task = '')
+    {
+        if (!is_array($mobiles)) {
+            throw new NumaException('请传入数组');
+        }
+        //去除重复
+        $mobiles = array_unique($mobiles);
+        if (count($mobiles) > 1000) {
+            throw new NumaException('每次最多传入1000条数据');
+        }
+        if ($content == "") {
+            throw new NumaException('发送内容不能为空');
+        }
+        $mobiles = implode(",", $mobiles);
+        $datas = [];
+        $datas['mobile'] = $mobiles;
+        $datas['typeid'] = TYPE::SMS_NOTICE;
+        $datas['content'] = $content;
+        $datas['name'] = $task;
+        $result = $this->_send($datas);
+        return $result;
+    }
+
+    /**
+     * 短信发送处理
      *
      * @param array $datas
      * @param int $debug
@@ -101,10 +262,9 @@ class Sms
      */
     private function _createParamA()
     {
-        if (config('aodao.mode') == 1) {//免审模式
-            $param_a = Aodao::PARAM_A;
-        } else {
-            $param_a = 'sendsms';
+        $param_a = Aodao::PARAM_A;
+        if ($param_a == '') {
+            $param_a = 'we7cms';
         }
         return $param_a;
     }
@@ -138,51 +298,19 @@ class Sms
         } else {
             $sendtime = $t;
         }
-        if (config('aodao.mode') == 1) {//免审模式
-            if (!isset($datas['inform_con'])) {
-                throw new NumaException('缺少签名内容[inform_con]');
-            }
-            if (!isset($datas['content'])) {
-                throw new NumaException('缺少短信内容[content]');
-            }
-            $agv = array(
-                'appid' => $appid,
-                'appkey' => $secret,
-                'mobile' => trim($datas['mobile']),
-                'time' => $t,
-                'token' => $token,
-                'sendtime' => $sendtime,
-                'sign' => Common::createSign($token, $appid, $secret, $t),
-                'inform_con' => $datas['inform_con'],//签名内容
-                'content' => $datas['content'],//短信内容
-                'typeid' => $datas['typeid'],
-                'name' => $name,
-            );
-        } else {
-            if (!isset($datas['inform_id'])) {
-                throw new NumaException('缺少签名模板ID[inform_id]');
-            }
-            if (!isset($datas['template_id'])) {
-                throw new NumaException('缺少内容模板ID[template_id]');
-            }
-            if (!isset($datas['content'])) {
-                throw new NumaException('缺少模板变量值[content]');
-            }
-            $agv = array(
-                'appid' => $appid,
-                'appkey' => $secret,
-                'mobile' => trim($datas['mobile']),
-                'time' => $t,
-                'token' => $token,
-                'sendtime' => $sendtime,
-                'sign' => Common::createSign($token, $appid, $secret, $t),
-                'inform_type' => $datas['inform_id'],//签名模板ID
-                'template_type' => $datas['template_id'],//模板内容ID
-                'content_variable' => $datas['content'],//模板变量值
-                'typeid' => $datas['typeid'],
-                'name' => $name,
-            );
-        }
+        $agv = array(
+            'appid' => $appid,
+            'appkey' => $secret,
+            'mobile' => trim($datas['mobile']),
+            'time' => $t,
+            'token' => $token,
+            'sendtime' => $sendtime,
+            'sign' => Common::createSign($token, $appid, $secret, $t),
+            'inform_con' => isset($datas['inform_con']) ? $datas['inform_con'] : '',//签名内容
+            'content' => $datas['content'],//短信内容
+            'typeid' => $datas['typeid'],
+            'name' => $name,
+        );
         return $agv;
     }
 }
