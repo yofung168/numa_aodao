@@ -14,4 +14,8 @@ return [
     "code_expire" => env('NUMA_AODAO_CODE_EXPIRE', 5),
     //验证码保存方式,默认文件形式
     "code_cache" => env('NUMA_AODAO_CODE_CACHE', 'file'),
+    //充值业务套餐保存时长，默认24*60分钟
+    "package_expire" => env('NUMA_AODAO_PACKAGE_EXPIRE', 1440),
+    //验证码保存方式,默认文件形式
+    "package_cache" => env('NUMA_AODAO_PACKAGE_CACHE', 'file'),
 ];

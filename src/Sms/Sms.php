@@ -56,17 +56,17 @@ class Sms
         $result = $this->_send($datas);
         return $result;
     }
-    /**
-     *
-     */
+
     /**
      * 语音短信
      *
      * @param $mobile
      * @param string $inform_con 签名
+     * @param string $task 任务名称
+     * @return array|mixed
      * @throws NumaException
      */
-    public function vcode($mobile, $inform_con = '')
+    public function vcode($mobile, $inform_con, $task = '')
     {
         if ($inform_con == '') {
             throw new NumaException('签名不能为空');
@@ -79,6 +79,8 @@ class Sms
         $datas['mobile'] = $mobile;
         $datas['typeid'] = Type::SMS_VOICENOTICE;
         $datas['content'] = $code;
+        $datas['inform_con'] = $inform_con;
+        $datas['name'] = $task;
         $result = $this->_send($datas);
         return $result;
     }
@@ -99,8 +101,6 @@ class Sms
             return false;
         } else {
             if (Hash::check($code, $cache_code)) {
-                //清除该值
-                Cache::store($cache_type)->forget($key);
                 return true;
             } else {
                 return false;
@@ -153,7 +153,7 @@ class Sms
         }
         $datas = [];
         $datas['mobile'] = $mobile;
-        $datas['typeid'] = TYPE::SMS_NOTICE;
+        $datas['typeid'] = Type::SMS_NOTICE;
         $datas['content'] = $content;
         $datas['name'] = $task;
         if ($sendtime > 0) {
@@ -262,9 +262,9 @@ class Sms
                     $headers[] = "Content-Type: application/x-www-form-urlencoded";
 
                     $res = Common::http_post(Aodao::SEND_URL, $post_datas, $headers);
-                    $result = @json_decode($res, TRUE);
+                    $res = @json_decode($res, TRUE);
                     if ($debug) {
-                        if ($result['data'] == '10021') {
+                        if ($res['data'] == '10021') {
                             return array("error" => 0, "message" => "接口正常");
                         } else {
                             $result['error'] = 1;
@@ -272,19 +272,19 @@ class Sms
                             return $result;
                         }
                     } else {
-                        if (isset($result['ret_code']) && $result['ret_code'] == 0) {
-                            if (isset($result['data']['err_code']) && $result['data']['err_code'] == '10001') {
+                        if (isset($res['ret_code']) && $res['ret_code'] == 0) {
+                            if (isset($res['data']['err_code']) && $res['data']['err_code'] == '10001') {
                                 $result['error'] = 0;
                                 $result['message'] = "接口成功";
-                                $result['data'] = $result['data'];
+                                $result['data'] = $res['data'];
                             } else {
                                 $result['error'] = 1;
-                                $result['message'] = Error::info($result['data']['err_code']);
+                                $result['message'] = Error::info($res['data']['err_code']);
                             }
                             return $result;
                         } else {
                             $result['error'] = 1;
-                            $result['message'] = isset($result['msg']) ? $result['msg'] : '接口失败';
+                            $result['message'] = isset($res['msg']) ? $res['msg'] : '接口失败';
                             return $result;
                         }
                     }
@@ -332,7 +332,7 @@ class Sms
         }
         $token = Common::random_srt(8);
         $t = time();
-        if (isset($datas["name"])) {
+        if (isset($datas["name"]) && $datas['name'] != '') {
             $name = $datas['name'] . "_" . date('YmdHis', $t) . '_' . $token;
         } elseif (isset($datas["sitecode"])) {
             $name = date('YmdHis', $t) . '_' . $token . '_' . $datas['sitecode'];

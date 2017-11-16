@@ -222,20 +222,20 @@ class Recharge
                     $headers[] = "Content-Type: application/x-www-form-urlencoded";
 
                     $res = Common::http_post(Aodao::SEND_URL, $post_datas, $headers);
-                    $result = @json_decode($res, TRUE);
-                    if (isset($result['ret_code']) && $result['ret_code'] == 0) {
+                    $res = @json_decode($res, TRUE);
+                    if (isset($res['ret_code']) && $res['ret_code'] == 0) {
                         $result['error'] = 0;
                         $result['message'] = "接口成功";
-                        $result['data'] = isset($result['data']) ? $result['data'] : '';
-                        if (isset($datas['cklist']) && isset($result['data']) && $cache) {
-                            $this->_cachePackages($business_type, $result['data']);
+                        $result['data'] = isset($res['data']) ? $res['data'] : '';
+                        if (isset($datas['cklist']) && isset($res['data']) && $cache) {
+                            $this->_cachePackages($business_type, $res['data']);
                         }
-                        $result['time'] = isset($result['time']) ? $result['time'] : time();
+                        $result['time'] = isset($res['time']) ? $res['time'] : time();
                         return $result;
                     } else {
                         $result['error'] = 1;
-                        $result['code'] = isset($result['ret_code']) ? $result['ret_code'] : -1;
-                        $result['message'] = isset($result['redirect']) ? $result['redirect'] : '接口失败';
+                        $result['code'] = isset($res['ret_code']) ? $res['ret_code'] : -1;
+                        $result['message'] = isset($res['redirect']) ? $res['redirect'] : '接口失败';
                         return $result;
                     }
                 } catch (NumaException $exception) {
