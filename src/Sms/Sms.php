@@ -1,7 +1,7 @@
 <?php
 /**
  * 奥道易通短信业务
- * User: Administrator
+ * User: EdwinLee
  * Date: 2017/11/14/014
  * Time: 20:41
  */
@@ -142,10 +142,11 @@ class Sms
      * @param $mobile 手机号码
      * @param $content 内容
      * @param $task 任务名称
+     * @param $sendtime 定时发送
      * @return array|mixed
      * @throws NumaException
      */
-    public function notice($mobile, $content, $task = '')
+    public function notice($mobile, $content, $task = '', $sendtime = 0)
     {
         if ($content == "") {
             throw new NumaException('发送内容不能为空');
@@ -155,6 +156,9 @@ class Sms
         $datas['typeid'] = TYPE::SMS_NOTICE;
         $datas['content'] = $content;
         $datas['name'] = $task;
+        if ($sendtime > 0) {
+            $datas['sendtime'] = $sendtime;
+        }
         $result = $this->_send($datas);
         return $result;
     }
@@ -168,7 +172,7 @@ class Sms
      * @return array|mixed
      * @throws NumaException
      */
-    public function noticeBatch($mobiles, $content, $task = '')
+    public function noticeBatch($mobiles, $content, $task = '', $sendtime = 0)
     {
         if (!is_array($mobiles)) {
             throw new NumaException('请传入数组');
@@ -186,7 +190,49 @@ class Sms
         $datas['mobile'] = $mobiles;
         $datas['typeid'] = TYPE::SMS_NOTICE;
         $datas['content'] = $content;
-        $datas['name'] = $task;
+        if ($task != "") {
+            $datas['name'] = $task;
+        }
+        if ($sendtime) {
+            $datas['sendtime'] = $sendtime;
+        }
+        $result = $this->_send($datas);
+        return $result;
+    }
+
+    /**
+     * 会员短信群发（早9晚8）
+     *
+     * 非即时性发送
+     * @param $mobiles
+     * @param $content
+     * @param string $task
+     * @param int $sendtime
+     */
+    public function batch($mobiles, $content, $task = '', $sendtime = 0)
+    {
+        if (!is_array($mobiles)) {
+            throw new NumaException('请传入数组');
+        }
+        //去除重复
+        $mobiles = array_unique($mobiles);
+        if (count($mobiles) > 1000) {
+            throw new NumaException('每次最多传入1000条数据');
+        }
+        if ($content == "") {
+            throw new NumaException('发送内容不能为空');
+        }
+        $mobiles = implode(",", $mobiles);
+        $datas = [];
+        $datas['mobile'] = $mobiles;
+        $datas['typeid'] = TYPE::SMS_BATCHSEND;
+        $datas['content'] = $content;
+        if ($task != "") {
+            $datas['name'] = $task;
+        }
+        if ($sendtime) {
+            $datas['sendtime'] = $sendtime;
+        }
         $result = $this->_send($datas);
         return $result;
     }

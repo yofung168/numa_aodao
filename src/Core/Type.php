@@ -22,4 +22,10 @@ class Type
     const RECHARGE_OIL = 15;//油卡钱包
     const RECHARGE_CERTIFY = 16;//手机三元素实名认证
 
+    //业务通道
+    const BUSINESS_MAIL = "sendmail";//邮件业务
+    const BUSINESS_OIL = "sendoil";//加油卡业务
+    const BUSINESS_LIU = "sendliu";//流量业务
+    const BUSINESS_TECH = "sendtach";//话费业务
+
 }
