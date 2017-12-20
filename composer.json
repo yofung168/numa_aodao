@@ -14,8 +14,16 @@
         }
     ],
     "autoload": {
-        "psr-0": {
-            "Monolog": "src"
+            "psr-0": {
+                "Monolog": "src"
+            },
+            "psr-4": {
+                "Numa\\Aodao\\": "src/"
+            }
+        },
+    "autoload-dev": {
+        "psr-4": {
+            "Numa\\Aodao\\": "src/"
         }
     }
 }
