@@ -2,7 +2,7 @@
     "name": "numa/aodao",
     "description": "AoDao Application Interface for Laravel",
     "type": "library",
-    "version":"0.0.1",
+    "version":"0.0.2",
     "require": {
       "php": ">=5.3.0"
     },
