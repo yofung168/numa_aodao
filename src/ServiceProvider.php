@@ -40,5 +40,8 @@ class ServiceProvider extends LaravelServiceProvider
         $this->app->singleton('aodao', function ($app) {
             return new Aodao(config('aodao'));
         });
+        $this->app->singleton('yhcc', function ($app) {
+            return new YouHaoChaCha(config('aodao'));
+        });
     }
 }

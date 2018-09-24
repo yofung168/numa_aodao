@@ -18,4 +18,10 @@ return [
     "package_expire" => env('NUMA_AODAO_PACKAGE_EXPIRE', 1440),
     //验证码保存方式,默认文件形式
     "package_cache" => env('NUMA_AODAO_PACKAGE_CACHE', 'file'),
+    //优号查查接口地址
+    "yhcc_url"=>env('NUMA_AODAO_YHCC_URL','https://yhcc.alinuma.com/wapp/'),
+    //优号查查APPid
+    "yhcc_appid"=>env('NUMA_AODAO_YHCC_APPID',''),
+    //优号查查APPsecret
+    "yhcc_appsecret"=>env('NUMA_AODAO_YHCC_APPSECRET',''),
 ];

@@ -262,6 +262,7 @@ class Sms
                     $headers[] = "Content-Type: application/x-www-form-urlencoded";
 
                     $res = Common::http_post(Aodao::SEND_URL, $post_datas, $headers);
+                    dd($post_datas);
                     $res = @json_decode($res, TRUE);
                     if ($debug) {
                         if ($res['data'] == '10021') {
@@ -272,6 +273,7 @@ class Sms
                             return $result;
                         }
                     } else {
+
                         if (isset($res['ret_code']) && $res['ret_code'] == 0) {
                             if (isset($res['data']['err_code']) && $res['data']['err_code'] == '10001') {
                                 $result['error'] = 0;

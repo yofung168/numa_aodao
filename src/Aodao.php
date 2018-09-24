@@ -10,7 +10,7 @@ class Aodao
     protected $app_id;
     protected $app_secret;
 
-    const SEND_URL = "https://sms.aodao.com.cn/api/api.php";
+    const SEND_URL = "https://www.aodao.com.cn/api/api.php";
     //免审短信通道
     const PARAM_A = "alinuma";
     //短信实例
