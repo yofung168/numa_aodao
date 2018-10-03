@@ -17,11 +17,12 @@ class YouHaoChaCha
         $this->app_id = $config['yhcc_appid'];
         $this->app_secret = $config['yhcc_appsecret'];
         $url = $config['yhcc_url'];
-        if($url==''){
+        if ($url == '') {
             $url = self::SEND_URL;
         }
         $this->url = $url;
     }
+
     /**
      * 账号信息
      *
@@ -36,7 +37,29 @@ class YouHaoChaCha
         }
         $datas = [];
         $datas['no'] = $account_no;
-        $result = $this->_send('account/info',$datas);
+        $result = $this->_send('account/info', $datas);
+        return $result;
+    }
+
+    /**
+     * 获取账号对他人评价记录
+     *
+     * @param $account_no 账号
+     * @param $page =1
+     * @param $size =10
+     * @return array|mixed
+     * @throws NumaException
+     */
+    public function rate($account_no, $page = 1, $size = 10)
+    {
+        if ($account_no == '') {
+            throw new NumaException('账号不能为空');
+        }
+        $datas = [];
+        $datas['no'] = $account_no;
+        $datas['page'] = $page;
+        $datas['size'] = $size;
+        $result = $this->_send('account/rate', $datas);
         return $result;
     }
 
@@ -47,7 +70,7 @@ class YouHaoChaCha
      * @param int $debug
      * @return array|mixed
      */
-    private function _send($path,$datas = [], $debug = 0)
+    private function _send($path, $datas = [], $debug = 0)
     {
         $result = ['error' => 0, "message" => "成功", "data" => []];
         if (empty($datas)) {
@@ -57,7 +80,7 @@ class YouHaoChaCha
         } else {
             if (is_array($datas)) {
                 try {
-                    $url = $this->url.$path;
+                    $url = $this->url . $path;
                     $data = $this->_createArguments($datas, $debug);
                     $headers[] = "Content-Type: application/x-www-form-urlencoded";
                     $res = Common::http_post($url, $data, $headers);
@@ -75,6 +98,7 @@ class YouHaoChaCha
             }
         }
     }
+
     /**
      * 生成参数信息
      *
@@ -92,7 +116,7 @@ class YouHaoChaCha
             'appkey' => $secret,
             'timestamp' => $t
         );
-        $data = array_merge($data,$datas);
+        $data = array_merge($data, $datas);
         $sign = $this->_createSignature($data);
         $data['sign'] = $sign;
         return $data;
